@@ -18,21 +18,21 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans antialiased min-h-screen pb-28">
 
-  <!-- HEADER FIJO -->
+  <!-- HEADER -->
   <header class="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-4 py-3 flex items-center justify-between">
     <div class="flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-        <i class="ph ph-trend-up text-xl"></i>
+        <i class="ph ph-wallet text-xl"></i>
       </div>
       <div>
-        <h1 class="text-xs font-semibold text-zinc-400 leading-none">Sistema Financiero</h1>
+        <h1 class="text-xs font-semibold text-zinc-400 leading-none">Presupuesto Base Cero</h1>
         <div class="flex items-center gap-2 mt-1">
-          <select id="select-year" onchange="setYear(this.value)" class="bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs font-bold text-white focus:outline-none cursor-pointer">
+          <select id="select-year" onchange="setYear(this.value)" class="bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 text-xs font-bold text-white focus:outline-none cursor-pointer">
             <option value="2025">2025</option>
             <option value="2026" selected>2026</option>
             <option value="2027">2027</option>
           </select>
-          <select id="select-currency" onchange="setCurrency(this.value)" class="bg-zinc-900 border border-zinc-800 rounded px-1 py-0.5 text-xs text-zinc-300 focus:outline-none cursor-pointer">
+          <select id="select-currency" onchange="setCurrency(this.value)" class="bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 text-xs text-zinc-300 focus:outline-none cursor-pointer">
             <option value="$">$ (USD/MXN)</option>
             <option value="€">€ (EUR)</option>
             <option value="£">£ (GBP)</option>
@@ -41,10 +41,10 @@
       </div>
     </div>
     <div class="flex gap-1.5">
-      <button onclick="exportBackup()" title="Exportar Backup" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-800">
+      <button onclick="exportBackup()" title="Respaldar JSON" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-800">
         <i class="ph ph-download-simple text-base"></i>
       </button>
-      <button onclick="importBackupPrompt()" title="Importar Backup" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-800">
+      <button onclick="importBackupPrompt()" title="Restaurar JSON" class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-800">
         <i class="ph ph-upload-simple text-base"></i>
       </button>
     </div>
@@ -53,10 +53,10 @@
   <!-- CONTENEDOR PRINCIPAL -->
   <main class="max-w-md mx-auto px-4 pt-3">
 
-    <!-- PESTAÑA 1: SEGUIMIENTO MENSUAL (ENERO A DICIEMBRE) -->
+    <!-- VISTA 1: SEGUIMIENTO MENSUAL (ENERO A DICIEMBRE) -->
     <section id="view-mes" class="space-y-4">
       <!-- Selector de Meses -->
-      <div class="flex items-center justify-between bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+      <div class="flex items-center justify-between bg-zinc-900 p-1.5 rounded-xl border border-zinc-800">
         <button onclick="changeMonth(-1)" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white"><i class="ph ph-caret-left font-bold"></i></button>
         <div class="text-center">
           <span id="current-month-display" class="font-bold text-sm tracking-wide text-white">Enero</span>
@@ -65,47 +65,47 @@
         <button onclick="changeMonth(1)" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white"><i class="ph ph-caret-right font-bold"></i></button>
       </div>
 
-      <!-- Tarjeta de Remanente Mensual (Base Cero) -->
+      <!-- Tarjeta de Remanente Mensual -->
       <div id="remanente-card" class="p-4 rounded-2xl border transition-all bg-zinc-900 border-zinc-800">
         <div class="flex justify-between items-start">
           <div>
-            <span class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Remanente del Mes</span>
+            <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Remanente del Mes</span>
             <h2 id="remanente-val" class="text-3xl font-black mt-0.5">$0.00</h2>
           </div>
           <span id="remanente-status-badge" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300">
-            Calculando...
+            Base Cero
           </span>
         </div>
-        <p id="remanente-msg" class="text-xs text-zinc-400 mt-2">Ingresos vs Gastos, Deudas y Ahorros de este mes.</p>
+        <p id="remanente-msg" class="text-xs text-zinc-400 mt-2">Diferencia entre Ingresos y la suma de Gastos, Deudas y Ahorros.</p>
       </div>
 
-      <!-- Métricas rápidas del mes -->
+      <!-- Métricas del mes -->
       <div class="grid grid-cols-2 gap-2 text-xs">
         <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800/80">
-          <span class="text-zinc-400 block text-[10px] uppercase">Ingresos Reales</span>
+          <span class="text-zinc-400 block text-[10px] uppercase font-bold">Ingresos Reales</span>
           <span id="month-real-ingresos" class="text-sm font-bold text-emerald-400 mt-0.5 block">$0.00</span>
           <span id="month-est-ingresos" class="text-[10px] text-zinc-500">Est: $0.00</span>
         </div>
         <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800/80">
-          <span class="text-zinc-400 block text-[10px] uppercase">Egresos Reales</span>
+          <span class="text-zinc-400 block text-[10px] uppercase font-bold">Egresos Reales</span>
           <span id="month-real-egresos" class="text-sm font-bold text-rose-400 mt-0.5 block">$0.00</span>
           <span id="month-est-egresos" class="text-[10px] text-zinc-500">Est: $0.00</span>
         </div>
       </div>
 
-      <!-- Desglose por Categorías Principales con Ejecución Presupuestaria -->
+      <!-- Ejecución por Categorías con Banderas de Exceso -->
       <div class="space-y-3">
-        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Resumen por Categorías</h3>
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ejecución por Categorías</h3>
         <div id="month-categories-summary" class="space-y-2">
           <!-- Inyectado por JS -->
         </div>
       </div>
 
-      <!-- Transacciones del Mes Actual -->
+      <!-- Lista de Transacciones del Mes -->
       <div class="space-y-2 pt-2">
         <div class="flex justify-between items-center">
-          <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Bitácora de Transacciones</h3>
-          <span id="month-tx-count" class="text-[10px] bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-400">0 reg.</span>
+          <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Transacciones del Mes</h3>
+          <span id="month-tx-count" class="text-[10px] bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-400 font-mono">0 reg.</span>
         </div>
         <div id="month-transactions-list" class="space-y-1.5">
           <!-- Inyectado por JS -->
@@ -113,14 +113,14 @@
       </div>
     </section>
 
-    <!-- PESTAÑA 2: PRESUPUESTO BASE CERO (CONFIGURACIÓN DE PLANTILLA) -->
+    <!-- VISTA 2: CONFIGURACIÓN PRESUPUESTO BASE -->
     <section id="view-presupuesto" class="space-y-4 hidden">
       <div class="bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 text-xs space-y-1.5">
         <div class="flex justify-between items-center">
-          <span class="font-bold text-emerald-400 flex items-center gap-1"><i class="ph ph-info"></i> Plantilla Presupuesto Base Cero</span>
-          <span id="presupuesto-base-remanente" class="font-black text-xs px-2 py-0.5 rounded bg-zinc-800">$0.00</span>
+          <span class="font-bold text-emerald-400 flex items-center gap-1"><i class="ph ph-sliders"></i> Presupuesto Base Cero</span>
+          <span id="presupuesto-base-remanente" class="font-black text-xs px-2 py-0.5 rounded bg-zinc-800 font-mono">$0.00</span>
         </div>
-        <p class="text-zinc-400 leading-relaxed text-[11px]">Configura tus subcategorías y montos estimados mensuales. Estos valores se heredan dinámicamente en los 12 meses del año.</p>
+        <p class="text-zinc-400 text-[11px] leading-relaxed">Configura los montos estimados mensuales para cada subcategoría. Se heredan dinámicamente en los 12 meses.</p>
       </div>
 
       <div id="presupuesto-categories-list" class="space-y-4">
@@ -128,23 +128,22 @@
       </div>
     </section>
 
-    <!-- PESTAÑA 3: DASHBOARD ANUAL (DASHBOARD) -->
+    <!-- VISTA 3: DASHBOARD ANUAL -->
     <section id="view-dashboard-anual" class="space-y-4 hidden">
-      <!-- Indicadores Anuales -->
       <div class="grid grid-cols-2 gap-2 text-xs">
         <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-          <span class="text-zinc-400 block text-[10px] uppercase">Tasa de Ahorro / Inversión</span>
-          <span id="anual-tasa-ahorro" class="text-xl font-black text-emerald-400 mt-1 block">0.0%</span>
+          <span class="text-zinc-400 block text-[10px] uppercase font-bold">Tasa Ahorro / Inversión</span>
+          <span id="anual-tasa-ahorro" class="text-2xl font-black text-emerald-400 mt-1 block">0.0%</span>
           <span class="text-[10px] text-zinc-500">Meta: >= 20%</span>
         </div>
         <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-          <span class="text-zinc-400 block text-[10px] uppercase">Remanente Acumulado</span>
-          <span id="anual-remanente-total" class="text-xl font-black text-white mt-1 block">$0.00</span>
-          <span class="text-[10px] text-zinc-500">Todo el año</span>
+          <span class="text-zinc-400 block text-[10px] uppercase font-bold">Remanente Anual</span>
+          <span id="anual-remanente-total" class="text-2xl font-black text-white mt-1 block">$0.00</span>
+          <span class="text-[10px] text-zinc-500">Acumulado año</span>
         </div>
       </div>
 
-      <!-- Gráfico Anual Mensualizado -->
+      <!-- Gráfico Anual -->
       <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-2">
         <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ingresos vs Gastos por Mes</h3>
         <div class="h-44 w-full">
@@ -154,13 +153,13 @@
 
       <!-- Top 10 Subcategorías de Mayor Gasto -->
       <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-3">
-        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Top 10 Subcategorías de Mayor Gasto</h3>
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Top 10 Mayores Gastos</h3>
         <div id="top-10-expenses-list" class="space-y-2">
           <!-- Inyectado por JS -->
         </div>
       </div>
 
-      <!-- Tabla Consolidada Anual -->
+      <!-- Tabla Consolidada -->
       <div class="bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 space-y-2 overflow-hidden">
         <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Consolidado Anual Categorizado</h3>
         <div class="overflow-x-auto no-scrollbar">
@@ -181,30 +180,28 @@
       </div>
     </section>
 
-    <!-- PESTAÑA 4: PATRIMONIO NETO -->
+    <!-- VISTA 4: PATRIMONIO NETO -->
     <section id="view-patrimonio" class="space-y-4 hidden">
-      <!-- Card Patrimonio Neto -->
       <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800 space-y-2">
-        <span class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Patrimonio Neto Actual</span>
+        <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Patrimonio Neto Actual</span>
         <h2 id="patrimonio-neto-val" class="text-3xl font-black text-emerald-400">$0.00</h2>
         <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800 text-xs">
           <div>
-            <span class="text-zinc-500 text-[10px] uppercase block">Total Activos</span>
-            <p id="patrimonio-activos-val" class="font-bold text-emerald-400 text-sm">$0.00</p>
+            <span class="text-zinc-500 text-[10px] font-bold uppercase block">Total Activos</span>
+            <p id="patrimonio-activos-val" class="font-bold text-emerald-400 text-sm font-mono">$0.00</p>
           </div>
           <div>
-            <span class="text-zinc-500 text-[10px] uppercase block">Total Pasivos</span>
-            <p id="patrimonio-pasivos-val" class="font-bold text-rose-400 text-sm">$0.00</p>
+            <span class="text-zinc-500 text-[10px] font-bold uppercase block">Total Pasivos</span>
+            <p id="patrimonio-pasivos-val" class="font-bold text-rose-400 text-sm font-mono">$0.00</p>
           </div>
         </div>
       </div>
 
-      <!-- Tablas de Activos y Pasivos -->
       <div class="space-y-4">
         <!-- Activos -->
         <div class="bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 space-y-2">
           <div class="flex justify-between items-center pb-1 border-b border-zinc-800">
-            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Activos (Bancos, Inversiones, Bienes)</h3>
+            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Activos (Bancos, Inmuebles)</h3>
             <button onclick="addPatrimonioRow('activos')" class="text-[11px] text-emerald-400 font-semibold hover:underline">+ Agregar</button>
           </div>
           <div id="patrimonio-activos-list" class="space-y-1.5">
@@ -215,7 +212,7 @@
         <!-- Pasivos -->
         <div class="bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 space-y-2">
           <div class="flex justify-between items-center pb-1 border-b border-zinc-800">
-            <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider">Pasivos (Deudas, Créditos, Hipotecas)</h3>
+            <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider">Pasivos (Deudas, Créditos)</h3>
             <button onclick="addPatrimonioRow('pasivos')" class="text-[11px] text-rose-400 font-semibold hover:underline">+ Agregar</button>
           </div>
           <div id="patrimonio-pasivos-list" class="space-y-1.5">
@@ -227,14 +224,14 @@
 
   </main>
 
-  <!-- BOTÓN FLOTANTE REGISTRO RÁPIDO (+) -->
+  <!-- BOTÓN FLOTANTE (+) REGISTRO RÁPIDO -->
   <div class="fixed bottom-16 right-4 z-40">
     <button onclick="openModalTx()" class="w-14 h-14 rounded-full bg-emerald-500 text-zinc-950 font-black shadow-lg shadow-emerald-500/25 flex items-center justify-center text-2xl active:scale-95 transition-all">
       <i class="ph ph-plus font-bold"></i>
     </button>
   </div>
 
-  <!-- NAVEGACIÓN INFERIOR (BOTTOM BAR NATIVA) -->
+  <!-- BOTTOM BAR NAVEGACIÓN -->
   <nav class="fixed bottom-0 left-0 right-0 z-30 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 px-2 py-2 flex justify-around">
     <button onclick="switchTab('mes')" id="nav-mes" class="flex flex-col items-center gap-1 text-emerald-400">
       <i class="ph ph-calendar-blank text-xl"></i>
@@ -254,7 +251,7 @@
     </button>
   </nav>
 
-  <!-- MODAL DE CAPTURA RÁPIDA -->
+  <!-- MODAL CAPTURA RÁPIDA -->
   <div id="modal-tx" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
@@ -306,7 +303,7 @@
     </div>
   </div>
 
-  <!-- SISTEMA PRINCIPAL JAVASCRIPT -->
+  <!-- JAVASCRIPT MOTOR PRINCIPAL -->
   <script>
     const CATEGORIES = [
       { id: 'ingresos', name: 'Ingresos', type: 'in' },
@@ -319,7 +316,7 @@
 
     const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-    // ESTRUCTURA DE DATOS FIDELIDAD AL GOOGLE SHEETS
+    // DATOS INICIALES (Misma estructura de subcategorías que tu Sheets)
     let appState = {
       year: 2026,
       currency: '$',
@@ -339,7 +336,6 @@
       }
     };
 
-    // INICIALIZACIÓN
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
       document.getElementById('select-year').value = appState.year;
@@ -351,7 +347,7 @@
       initChartAnual();
     });
 
-    // SISTEMA DE NAVEGACIÓN POR VISTAS
+    // SISTEMA DE PESTAÑAS
     function switchTab(tabId) {
       const tabs = ['mes', 'presupuesto', 'dashboard-anual', 'patrimonio'];
       tabs.forEach(t => {
@@ -370,7 +366,7 @@
       if (tabId === 'patrimonio') renderPatrimonioView();
     }
 
-    // CONTROL DEL MES NAVEGABLE
+    // CONTROL DE MES
     function changeMonth(delta) {
       appState.currentMonthIdx += delta;
       if (appState.currentMonthIdx < 0) {
@@ -397,14 +393,13 @@
       renderMonthView();
     }
 
-    // RENDEREADO 1: MES ACTUAL (EQUIVALENTE A LA PESTAÑA MENSUAL EN SHEETS)
+    // 1. VISTA MENSUAL
     function renderMonthView() {
       document.getElementById('current-month-display').innerText = MONTHS[appState.currentMonthIdx];
       document.getElementById('current-year-display').innerText = appState.year;
 
       const currentTxs = getFilteredTransactions(appState.year, appState.currentMonthIdx);
 
-      // Totales Reales
       let realTotals = { ingresos: 0, esenciales: 0, discrecionales: 0, deudas: 0, ahorros: 0, inversiones: 0 };
       currentTxs.forEach(t => {
         if (realTotals.hasOwnProperty(t.cat)) {
@@ -412,7 +407,6 @@
         }
       });
 
-      // Totales Estimados
       let estIngresos = getCatEstimateTotal('ingresos');
       let estEgresos = getCatEstimateTotal('esenciales') + getCatEstimateTotal('discrecionales') + getCatEstimateTotal('deudas') + getCatEstimateTotal('ahorros') + getCatEstimateTotal('inversiones');
 
@@ -425,7 +419,6 @@
       document.getElementById('month-real-egresos').innerText = fmtMoney(realEgresosTotal);
       document.getElementById('month-est-egresos').innerText = `Est: ${fmtMoney(estEgresos)}`;
 
-      // Badge de Salud Base Cero
       const card = document.getElementById('remanente-card');
       const badge = document.getElementById('remanente-status-badge');
       const msg = document.getElementById('remanente-msg');
@@ -433,21 +426,20 @@
       if (Math.abs(remanente) < 0.01 && realTotals.ingresos > 0) {
         card.className = "p-4 rounded-2xl border transition-all bg-emerald-950/30 border-emerald-500/40";
         badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400";
-        badge.innerText = "Base Cero ✔";
-        msg.innerText = "Todo el dinero de este mes tiene una asignación exacta.";
+        badge.innerText = "Base Cero 🎉";
+        msg.innerText = "Sueldo o ingresos completamente asignados.";
       } else if (remanente < 0) {
         card.className = "p-4 rounded-2xl border transition-all bg-rose-950/30 border-rose-500/40";
         badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400";
         badge.innerText = "Déficit 🚨";
-        msg.innerText = "Tus egresos y asignaciones superan los ingresos de este mes.";
+        msg.innerText = "Gastos y ahorros superan tus ingresos del mes.";
       } else {
         card.className = "p-4 rounded-2xl border transition-all bg-zinc-900 border-zinc-800";
         badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300";
-        badge.innerText = "Sobrante 👀";
-        msg.innerText = "Tienes saldo pendiente de presupuestar o asignar a ahorro.";
+        badge.innerText = "Por Asignar 👀";
+        msg.innerText = "Aún dispones de dinero sin asignar a ahorros o gastos.";
       }
 
-      // Render Resumen de Categorías con barras
       const summaryContainer = document.getElementById('month-categories-summary');
       summaryContainer.innerHTML = '';
 
@@ -460,7 +452,7 @@
         summaryContainer.innerHTML += `
           <div class="bg-zinc-900 p-2.5 rounded-xl border border-zinc-800/80">
             <div class="flex justify-between items-center text-xs mb-1">
-              <span class="font-bold text-zinc-300">${c.name}</span>
+              <span class="font-bold text-zinc-300">${c.name} ${isExceeded ? '🚨' : ''}</span>
               <span class="${isExceeded ? 'text-rose-400 font-bold' : 'text-zinc-400'} font-mono">${fmtMoney(real)} / ${fmtMoney(est)}</span>
             </div>
             <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -470,13 +462,12 @@
         `;
       });
 
-      // Render Bitácora
       const txList = document.getElementById('month-transactions-list');
       document.getElementById('month-tx-count').innerText = `${currentTxs.length} reg.`;
       txList.innerHTML = '';
 
       if (currentTxs.length === 0) {
-        txList.innerHTML = `<p class="text-xs text-zinc-500 italic text-center py-4">No hay movimientos registrados en este mes.</p>`;
+        txList.innerHTML = `<p class="text-xs text-zinc-500 italic text-center py-4">Sin movimientos este mes.</p>`;
       } else {
         currentTxs.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).forEach(t => {
           txList.appendChild(buildTxRowHTML(t));
@@ -507,7 +498,7 @@
       return div;
     }
 
-    // RENDEREADO 2: CONFIGURACIÓN PRESUPUESTO BASE
+    // 2. CONFIGURACIÓN DE PRESUPUESTO
     function renderPresupuestoView() {
       const container = document.getElementById('presupuesto-categories-list');
       container.innerHTML = '';
@@ -537,9 +528,9 @@
           <div class="bg-zinc-900 p-3.5 rounded-2xl border border-zinc-800 space-y-2">
             <div class="flex justify-between items-center pb-1 border-b border-zinc-800">
               <h4 class="text-xs font-bold text-zinc-300 uppercase">${cat.name}</h4>
-              <button onclick="addNewSubcatPrompt('${cat.id}')" class="text-[11px] text-emerald-400 font-semibold hover:underline">+ Agregar Subcategoría</button>
+              <button onclick="addNewSubcatPrompt('${cat.id}')" class="text-[11px] text-emerald-400 font-semibold hover:underline">+ Subcategoría</button>
             </div>
-            <div class="space-y-0.5">${subcatRows || '<p class="text-[10px] text-zinc-500 italic py-1">Sin subcategorías registradas.</p>'}</div>
+            <div class="space-y-0.5">${subcatRows || '<p class="text-[10px] text-zinc-500 italic py-1">Sin elementos.</p>'}</div>
           </div>
         `;
       });
@@ -562,7 +553,7 @@
     }
 
     function removeSubcategory(catId, subName) {
-      if (confirm(`¿Eliminar "${subName}" del presupuesto base?`)) {
+      if (confirm(`¿Eliminar "${subName}"?`)) {
         delete appState.budgetBase[catId][subName];
         saveState();
         renderPresupuestoView();
@@ -570,7 +561,7 @@
       }
     }
 
-    // RENDEREADO 3: DASHBOARD ANUAL & CONSOLIDADOS
+    // 3. DASHBOARD ANUAL
     let chartInstance = null;
     function renderDashboardAnualView() {
       let totalIngresosYear = 0;
@@ -601,14 +592,12 @@
       document.getElementById('anual-tasa-ahorro').innerText = `${tasa}%`;
       document.getElementById('anual-remanente-total').innerText = fmtMoney(totalIngresosYear - totalEgresosYear);
 
-      // Gráfico
       if (chartInstance) {
         chartInstance.data.datasets[0].data = ingresosByMonth;
         chartInstance.data.datasets[1].data = egresosByMonth;
         chartInstance.update();
       }
 
-      // Top 10 Gastos por Subcategoría
       const subcatGastoMap = {};
       appState.transactions.forEach(t => {
         const d = new Date(t.fecha + 'T00:00:00');
@@ -624,7 +613,7 @@
       const topList = document.getElementById('top-10-expenses-list');
       topList.innerHTML = '';
       if (sortedTop10.length === 0) {
-        topList.innerHTML = `<p class="text-xs text-zinc-500 italic py-2">Sin datos acumulados este año.</p>`;
+        topList.innerHTML = `<p class="text-xs text-zinc-500 italic py-2">Sin gastos registrados este año.</p>`;
       } else {
         sortedTop10.forEach(([name, amount], index) => {
           topList.innerHTML += `
@@ -636,7 +625,6 @@
         });
       }
 
-      // Tabla Consolidado
       const tabla = document.getElementById('tabla-consolidado-anual');
       tabla.innerHTML = '';
 
@@ -681,7 +669,7 @@
       });
     }
 
-    // RENDEREADO 4: PATRIMONIO NETO
+    // 4. PATRIMONIO NETO
     function renderPatrimonioView() {
       const activosContainer = document.getElementById('patrimonio-activos-list');
       const pasivosContainer = document.getElementById('patrimonio-pasivos-list');
@@ -746,7 +734,7 @@
       renderPatrimonioView();
     }
 
-    // MODAL Y MANEJO DE REGISTRO RÁPIDO
+    // MODAL Y MANTENIMIENTO
     function openModalTx() {
       syncSubcategoriesDropdown();
       document.getElementById('modal-tx').classList.remove('hidden');
@@ -798,7 +786,7 @@
       }
     }
 
-    // UTILIDADES DE CÁLCULO Y PERSISTENCIA LOCAL
+    // PERSISTENCIA LOCAL Y UTILS
     function getFilteredTransactions(year, monthIdx) {
       return appState.transactions.filter(t => {
         const d = new Date(t.fecha + 'T00:00:00');
@@ -830,7 +818,7 @@
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState));
       const dl = document.createElement('a');
       dl.setAttribute("href", dataStr);
-      dl.setAttribute("download", `presupuesto_completo_${appState.year}.json`);
+      dl.setAttribute("download", `presupuesto_backup_${appState.year}.json`);
       dl.click();
     }
 
@@ -848,7 +836,7 @@
             saveState();
             location.reload();
           } catch(err) {
-            alert("El archivo de respaldo no es válido.");
+            alert("El archivo no es un JSON válido.");
           }
         }
       }
