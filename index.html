@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Control Financiero - Presupuesto & Patrimonio</title>
+  <!-- PWA Manifest Inline Data -->
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNvbnRyb2wgRmluYW5jaWVybyIsCiAgInNob3J0X25hbWUiOiAiRmluYW56YXMiLAogICJzdGFydF91cmwiOiAiLi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxODE4MWIiLAogICJ0aGVtZV9jb2xvciI6ICIxODE4MWIiCiB9">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; user-select: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-zinc-900 text-zinc-100 font-sans antialiased min-h-screen pb-24">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-30 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+        <i class="ph ph-wallet text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-xs font-semibold text-zinc-400 leading-none">Presupuesto Base Cero</h1>
+        <div class="flex items-center gap-2 mt-0.5">
+          <select id="select-year" onchange="changeYear(this.value)" class="bg-transparent text-sm font-bold text-white focus:outline-none cursor-pointer">
+            <option value="2025" class="bg-zinc-800">2025</option>
+            <option value="2026" class="bg-zinc-800">2026</option>
+          </select>
+          <select id="select-currency" onchange="changeCurrency(this.value)" class="bg-transparent text-xs text-zinc-400 focus:outline-none cursor-pointer">
+            <option value="$" class="bg-zinc-800">$ (USD/MXN)</option>
+            <option value="€" class="bg-zinc-800">€ (EUR)</option>
+            <option value="£" class="bg-zinc-800">£ (GBP)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="exportData()" title="Respaldar datos" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
+        <i class="ph ph-download-simple"></i>
+      </button>
+      <button onclick="importDataPrompt()" title="Restaurar datos" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
+        <i class="ph ph-upload-simple"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL (VISTAS) -->
+  <main class="max-w-md mx-auto px-4 pt-4">
+
+    <!-- SECTOR 1: DASHBOARD MENSUAL -->
+    <section id="view-dashboard" class="space-y-4">
+      <!-- Selector de Mes -->
+      <div class="flex items-center justify-between bg-zinc-800/60 p-1.5 rounded-xl border border-zinc-700/50">
+        <button onclick="prevMonth()" class="p-2 hover:bg-zinc-700 rounded-lg"><i class="ph ph-caret-left font-bold"></i></button>
+        <span id="current-month-label" class="font-bold text-sm tracking-wide">Enero 2026</span>
+        <button onclick="nextMonth()" class="p-2 hover:bg-zinc-700 rounded-lg"><i class="ph ph-caret-right font-bold"></i></button>
+      </div>
+
+      <!-- Tarjeta de Remanente -->
+      <div id="remanente-card" class="p-4 rounded-2xl border transition-all bg-zinc-800/80 border-zinc-700">
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Remanente del Mes</span>
+            <h2 id="remanente-amount" class="text-2xl font-black mt-1">$0.00</h2>
+          </div>
+          <span id="remanente-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-zinc-700 text-zinc-300">
+            Base Cero
+          </span>
+        </div>
+        <p id="remanente-desc" class="text-xs text-zinc-400 mt-2">Ingresos asignados perfectamente a gastos, deudas y ahorros.</p>
+      </div>
+
+      <!-- Resumen Métricas Rápida -->
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="bg-zinc-800/40 p-3 rounded-xl border border-zinc-800">
+          <span class="text-zinc-400">Ingresos Reales</span>
+          <p id="dash-ingresos-real" class="text-sm font-bold text-emerald-400 mt-0.5">$0.00</p>
+        </div>
+        <div class="bg-zinc-800/40 p-3 rounded-xl border border-zinc-800">
+          <span class="text-zinc-400">Gastos + Deudas</span>
+          <p id="dash-gastos-real" class="text-sm font-bold text-rose-400 mt-0.5">$0.00</p>
+        </div>
+      </div>
+
+      <!-- Barras de Progreso por Categoria -->
+      <div class="bg-zinc-800/40 p-4 rounded-2xl border border-zinc-800 space-y-3">
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ejecución de Presupuesto</h3>
+        <div id="category-progress-bars" class="space-y-2.5">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Últimas Transacciones del Mes -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Movimientos del Mes</h3>
+          <button onclick="switchTab('transacciones')" class="text-xs text-emerald-400 hover:underline">Ver todos</button>
+        </div>
+        <div id="recent-transactions-list" class="space-y-1.5">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTOR 2: CONFIGURACIÓN DE PRESUPUESTO BASE -->
+    <section id="view-presupuesto" class="space-y-4 hidden">
+      <div class="bg-zinc-800/40 p-3 rounded-xl border border-zinc-800 text-xs text-zinc-300 space-y-1">
+        <p class="font-bold text-emerald-400">💡 Presupuesto Base Cero</p>
+        <p>Define aquí los montos estimados mensuales para cada subcategoría. El objetivo es asignar hasta que el remanente quede en $0.00.</p>
+      </div>
+
+      <div class="flex justify-between items-center bg-zinc-800/80 p-3 rounded-xl border border-zinc-700">
+        <span class="text-xs font-bold">Remanente Estimado:</span>
+        <span id="presupuesto-remanente-base" class="font-black text-sm">$0.00</span>
+      </div>
+
+      <div id="presupuesto-categories-container" class="space-y-4">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- SECTOR 3: TRANSACCIONES -->
+    <section id="view-transacciones" class="space-y-3 hidden">
+      <div class="flex items-center gap-2">
+        <input type="text" id="tx-search" oninput="renderTransactionsList()" placeholder="Buscar por subcategoría o nota..." class="w-full bg-zinc-800/80 border border-zinc-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+      </div>
+      <div id="all-transactions-list" class="space-y-2">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- SECTOR 4: PATRIMONIO NETO -->
+    <section id="view-patrimonio" class="space-y-4 hidden">
+      <div class="bg-zinc-800/80 p-4 rounded-2xl border border-zinc-700 space-y-2">
+        <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Patrimonio Neto Total</span>
+        <h2 id="patrimonio-neto-total" class="text-3xl font-black text-emerald-400">$0.00</h2>
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-700 text-xs">
+          <div>
+            <span class="text-zinc-400">Total Activos:</span>
+            <p id="patrimonio-activos-total" class="font-bold text-emerald-400">$0.00</p>
+          </div>
+          <div>
+            <span class="text-zinc-400">Total Pasivos:</span>
+            <p id="patrimonio-pasivos-total" class="font-bold text-rose-400">$0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tablas de Activos y Pasivos -->
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Activos (Cuentas, Bienes)</h3>
+          <button onclick="addPatrimonioItem('activo')" class="text-xs text-emerald-400 hover:underline">+ Agregar</button>
+        </div>
+        <div id="activos-list" class="space-y-1.5"></div>
+
+        <div class="flex justify-between items-center pt-2">
+          <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Pasivos (Deudas, Hipotecas)</h3>
+          <button onclick="addPatrimonioItem('pasivo')" class="text-xs text-rose-400 hover:underline">+ Agregar</button>
+        </div>
+        <div id="pasivos-list" class="space-y-1.5"></div>
+      </div>
+    </section>
+
+    <!-- SECTOR 5: DASHBOARD ANUAL & REPORTES -->
+    <section id="view-reportes" class="space-y-4 hidden">
+      <div class="bg-zinc-800/40 p-4 rounded-2xl border border-zinc-800 space-y-2">
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Tasa de Ahorro e Inversión Anual</h3>
+        <div class="flex items-baseline gap-2">
+          <span id="tasa-ahorro-anual" class="text-3xl font-black text-emerald-400">0.0%</span>
+          <span class="text-xs text-zinc-400">(Meta ideal: >= 20%)</span>
+        </div>
+      </div>
+
+      <!-- Gráfico Anual -->
+      <div class="bg-zinc-800/40 p-4 rounded-2xl border border-zinc-800 space-y-2">
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ingresos vs Gastos Mensuales</h3>
+        <div class="h-48 w-full">
+          <canvas id="chart-anual"></canvas>
+        </div>
+      </div>
+
+      <!-- Resumen Tabla Anual -->
+      <div class="bg-zinc-800/40 p-3 rounded-2xl border border-zinc-800 space-y-2 overflow-x-auto">
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Consolidado del Año</h3>
+        <table class="w-full text-left text-xs text-zinc-300">
+          <thead>
+            <tr class="border-b border-zinc-700 text-zinc-400">
+              <th class="pb-1">Cat</th>
+              <th class="pb-1 text-right">Est.</th>
+              <th class="pb-1 text-right">Real</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-resumen-anual" class="divide-y divide-zinc-800">
+            <!-- Injected via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTÓN FLOTANTE REGISTRO RÁPIDO (+) -->
+  <div class="fixed bottom-16 right-4 z-40">
+    <button onclick="openModalTransaction()" class="w-14 h-14 rounded-full bg-emerald-500 text-zinc-950 font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center text-2xl hover:scale-105 active:scale-95 transition-all">
+      <i class="ph ph-plus font-bold"></i>
+    </button>
+  </div>
+
+  <!-- BOTTOM BAR DE NAVEGACIÓN MÓVIL -->
+  <nav class="fixed bottom-0 left-0 right-0 z-30 bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 px-2 py-1.5 flex justify-around">
+    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-0.5 p-1 text-emerald-400">
+      <i class="ph ph-squares-four text-xl"></i>
+      <span class="text-[10px] font-medium">Inicio</span>
+    </button>
+    <button onclick="switchTab('presupuesto')" id="nav-presupuesto" class="flex flex-col items-center gap-0.5 p-1 text-zinc-400">
+      <i class="ph ph-sliders-horizontal text-xl"></i>
+      <span class="text-[10px] font-medium">Presupuesto</span>
+    </button>
+    <button onclick="switchTab('transacciones')" id="nav-transacciones" class="flex flex-col items-center gap-0.5 p-1 text-zinc-400">
+      <i class="ph ph-list-bullets text-xl"></i>
+      <span class="text-[10px] font-medium">Movimientos</span>
+    </button>
+    <button onclick="switchTab('patrimonio')" id="nav-patrimonio" class="flex flex-col items-center gap-0.5 p-1 text-zinc-400">
+      <i class="ph ph-coins text-xl"></i>
+      <span class="text-[10px] font-medium">Patrimonio</span>
+    </button>
+    <button onclick="switchTab('reportes')" id="nav-reportes" class="flex flex-col items-center gap-0.5 p-1 text-zinc-400">
+      <i class="ph ph-chart-line-up text-xl"></i>
+      <span class="text-[10px] font-medium">Reportes</span>
+    </button>
+  </nav>
+
+  <!-- MODAL PARA NUEVA TRANSACCIÓN -->
+  <div id="modal-transaction" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+        <h3 class="font-bold text-sm">Registrar Transacción</h3>
+        <button onclick="closeModalTransaction()" class="text-zinc-400 p-1"><i class="ph ph-x text-lg"></i></button>
+      </div>
+
+      <form id="form-transaction" onsubmit="saveTransaction(event)" class="space-y-3">
+        <div>
+          <label class="text-[11px] text-zinc-400 block mb-1">Monto</label>
+          <input type="number" step="0.01" id="tx-amount" required placeholder="0.00" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-lg font-bold text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] text-zinc-400 block mb-1">Categoría</label>
+            <select id="tx-category" onchange="updateSubcategoryOptions()" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-emerald-500">
+              <!-- Injected via JS -->
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] text-zinc-400 block mb-1">Subcategoría</label>
+            <select id="tx-subcategory" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-emerald-500">
+              <!-- Injected via JS -->
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] text-zinc-400 block mb-1">Fecha</label>
+            <input type="date" id="tx-date" required class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="text-[11px] text-zinc-400 block mb-1">Nota (opcional)</label>
+            <input type="text" id="tx-note" placeholder="Ej. Tienda / Detalle" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-all mt-2">
+          Guardar Movimiento
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // ESTADO DE LA APLICACIÓN
+    const CATEGORIES = [
+      { id: 'ingresos', name: 'Ingresos', type: 'income' },
+      { id: 'esenciales', name: 'Gastos Esenciales', type: 'expense' },
+      { id: 'discrecionales', name: 'Gastos Discrecionales', type: 'expense' },
+      { id: 'deudas', name: 'Pago de Deudas', type: 'expense' },
+      { id: 'ahorros', name: 'Ahorros', type: 'savings' },
+      { id: 'inversiones', name: 'Inversiones', type: 'savings' }
+    ];
+
+    const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    let state = {
+      year: 2026,
+      currency: '$',
+      currentMonth: new Date().getMonth(),
+      budgetBase: {
+        ingresos: { 'Sueldo': 3200 },
+        esenciales: { 'Renta': 1025, 'Super': 200, 'Aseguranza carro': 95, 'Celular': 104, 'Gasolina': 100, 'Laptop': 50, 'Internet': 70, 'Itzel': 150 },
+        discrecionales: { 'Gastos variables': 100, 'TC Free': 0, 'TC Aeroméxico': 0, 'TC América express': 0, 'TC Nu': 0, 'TC Volaris Invex': 0, 'TC Mercado Pago': 0, 'Tj Maxx': 0, 'TC Discovery': 0, 'TC Gap': 0, 'After Pay': 0, 'Taxes': 0 },
+        deudas: { 'Solares': 550, 'Abono extra solar': 0 },
+        ahorros: { 'Ahorro USA': 400, 'Ahorro MX': 400 },
+        inversiones: {}
+      },
+      transactions: [],
+      patrimonio: {
+        activos: [{ id: 1, name: 'Cuenta Banco USA', amount: 1500 }, { id: 2, name: 'Cuenta Banco MX', amount: 25000 }],
+        pasivos: [{ id: 1, name: 'Deuda Terreno Solar', amount: 12000 }]
+      }
+    };
+
+    // INICIALIZACIÓN
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalStorage();
+      document.getElementById('select-year').value = state.year;
+      document.getElementById('select-currency').value = state.currency;
+      document.getElementById('tx-date').valueAsDate = new Date();
+      
+      initCategoryOptions();
+      renderDashboard();
+      initChart();
+    });
+
+    // SISTEMA DE NAVEGACIÓN PESTAÑAS
+    function switchTab(tabId) {
+      const tabs = ['dashboard', 'presupuesto', 'transacciones', 'patrimonio', 'reportes'];
+      tabs.forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        document.getElementById(`nav-${t}`).classList.remove('text-emerald-400');
+        document.getElementById(`nav-${t}`).classList.add('text-zinc-400');
+      });
+
+      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+      document.getElementById(`nav-${tabId}`).classList.add('text-emerald-400');
+      document.getElementById(`nav-${tabId}`).classList.remove('text-zinc-400');
+
+      if (tabId === 'dashboard') renderDashboard();
+      if (tabId === 'presupuesto') renderPresupuestoBase();
+      if (tabId === 'transacciones') renderTransactionsList();
+      if (tabId === 'patrimonio') renderPatrimonio();
+      if (tabId === 'reportes') renderReportes();
+    }
+
+    // NAVEGACIÓN MES
+    function prevMonth() {
+      state.currentMonth = (state.currentMonth === 0) ? 11 : state.currentMonth - 1;
+      renderDashboard();
+    }
+    function nextMonth() {
+      state.currentMonth = (state.currentMonth === 11) ? 0 : state.currentMonth + 1;
+      renderDashboard();
+    }
+    function changeYear(val) {
+      state.year = parseInt(val);
+      saveLocalStorage();
+      renderDashboard();
+    }
+    function changeCurrency(val) {
+      state.currency = val;
+      saveLocalStorage();
+      renderDashboard();
+    }
+
+    // DENTRO DE DASHBOARD
+    function renderDashboard() {
+      document.getElementById('current-month-label').innerText = `${MONTH_NAMES[state.currentMonth]} ${state.year}`;
+
+      // Filtrar Transacciones del Mes
+      const currentTxs = getMonthTransactions(state.year, state.currentMonth);
+      
+      // Totales
+      let realIngresos = 0, realEsenciales = 0, realDiscrecionales = 0, realDeudas = 0, realAhorros = 0, realInversiones = 0;
+
+      currentTxs.forEach(t => {
+        if (t.category === 'ingresos') realIngresos += t.amount;
+        if (t.category === 'esenciales') realEsenciales += t.amount;
+        if (t.category === 'discrecionales') realDiscrecionales += t.amount;
+        if (t.category === 'deudas') realDeudas += t.amount;
+        if (t.category === 'ahorros') realAhorros += t.amount;
+        if (t.category === 'inversiones') realInversiones += t.amount;
+      });
+
+      const totalEgresosYAsignaciones = realEsenciales + realDiscrecionales + realDeudas + realAhorros + realInversiones;
+      const remanenteReal = realIngresos - totalEgresosYAsignaciones;
+
+      document.getElementById('dash-ingresos-real').innerText = formatMoney(realIngresos);
+      document.getElementById('dash-gastos-real').innerText = formatMoney(realEsenciales + realDiscrecionales + realDeudas);
+
+      // Card Remanente
+      const remCard = document.getElementById('remanente-card');
+      const remAmount = document.getElementById('remanente-amount');
+      const remBadge = document.getElementById('remanente-badge');
+      const remDesc = document.getElementById('remanente-desc');
+
+      remAmount.innerText = formatMoney(remanenteReal);
+
+      if (Math.abs(remanenteReal) < 0.01 && realIngresos > 0) {
+        remCard.className = "p-4 rounded-2xl border transition-all bg-emerald-950/40 border-emerald-500/50";
+        remBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400";
+        remBadge.innerText = "Base Cero Alcanzado 🎉";
+        remDesc.innerText = "¡Excelente! Cada dólar tiene un propósito asignado.";
+      } else if (remanenteReal < 0) {
+        remCard.className = "p-4 rounded-2xl border transition-all bg-rose-950/40 border-rose-500/50";
+        remBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400";
+        remBadge.innerText = "Déficit 🚨";
+        remDesc.innerText = "Estás gastando o asignando más de lo que ingresó este mes.";
+      } else {
+        remCard.className = "p-4 rounded-2xl border transition-all bg-zinc-800/80 border-zinc-700";
+        remBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-zinc-700 text-zinc-300";
+        remBadge.innerText = "Sobrante por Asignar 👀";
+        remDesc.innerText = "Aún tienes dinero sin asignar a ahorros o deudas.";
+      }
+
+      // Render Barras
+      renderProgressBars(realEsenciales, realDiscrecionales, realDeudas, realAhorros, realInversiones);
+      
+      // Render Recientes
+      const recentList = document.getElementById('recent-transactions-list');
+      recentList.innerHTML = '';
+      if (currentTxs.length === 0) {
+        recentList.innerHTML = `<p class="text-xs text-zinc-500 italic text-center py-2">Sin movimientos registrados este mes.</p>`;
+      } else {
+        currentTxs.slice(0, 5).forEach(t => {
+          recentList.appendChild(createTransactionRow(t));
+        });
+      }
+    }
+
+    function renderProgressBars(rE, rD, rDe, rA, rI) {
+      const container = document.getElementById('category-progress-bars');
+      container.innerHTML = '';
+
+      const cats = [
+        { id: 'esenciales', label: 'Esenciales', real: rE, est: getCategoryBudgetTotal('esenciales') },
+        { id: 'discrecionales', label: 'Discrecionales', real: rD, est: getCategoryBudgetTotal('discrecionales') },
+        { id: 'deudas', label: 'Deudas', real: rDe, est: getCategoryBudgetTotal('deudas') },
+        { id: 'ahorros', label: 'Ahorros', real: rA, est: getCategoryBudgetTotal('ahorros') }
+      ];
+
+      cats.forEach(c => {
+        const pct = c.est > 0 ? Math.min(Math.round((c.real / c.est) * 100), 100) : 0;
+        const isOver = c.real > c.est && c.est > 0;
+        const barColor = isOver ? 'bg-rose-500' : 'bg-emerald-500';
+
+        container.innerHTML += `
+          <div>
+            <div class="flex justify-between text-[11px] mb-1">
+              <span class="font-medium text-zinc-300">${c.label}</span>
+              <span class="${isOver ? 'text-rose-400 font-bold' : 'text-zinc-400'}">${formatMoney(c.real)} / ${formatMoney(c.est)} (${pct}%)</span>
+            </div>
+            <div class="w-full h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
+              <div class="h-full ${barColor} transition-all duration-300" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // PRESUPUESTO BASE
+    function renderPresupuestoBase() {
+      const container = document.getElementById('presupuesto-categories-container');
+      container.innerHTML = '';
+
+      let totalEstIngresos = getCategoryBudgetTotal('ingresos');
+      let totalEstEgresos = getCategoryBudgetTotal('esenciales') + getCategoryBudgetTotal('discrecionales') + getCategoryBudgetTotal('deudas') + getCategoryBudgetTotal('ahorros') + getCategoryBudgetTotal('inversiones');
+      let remanenteBase = totalEstIngresos - totalEstEgresos;
+
+      document.getElementById('presupuesto-remanente-base').innerText = formatMoney(remanenteBase);
+
+      CATEGORIES.forEach(cat => {
+        const subcats = state.budgetBase[cat.id] || {};
+        let subcatHtml = '';
+
+        Object.keys(subcats).forEach(subName => {
+          subcatHtml += `
+            <div class="flex items-center justify-between py-1 text-xs border-b border-zinc-800">
+              <span class="text-zinc-300">${subName}</span>
+              <div class="flex items-center gap-2">
+                <input type="number" step="0.01" value="${subcats[subName]}" onchange="updateSubcatBudget('${cat.id}', '${subName}', this.value)" class="w-20 bg-zinc-800 border border-zinc-700 rounded px-1.5 py-0.5 text-right font-bold focus:outline-none focus:border-emerald-500">
+                <button onclick="removeSubcategory('${cat.id}', '${subName}')" class="text-zinc-500 hover:text-rose-400"><i class="ph ph-trash"></i></button>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML += `
+          <div class="bg-zinc-800/40 p-3 rounded-2xl border border-zinc-800 space-y-2">
+            <div class="flex justify-between items-center pb-1 border-b border-zinc-700">
+              <h4 class="text-xs font-bold text-zinc-300 uppercase">${cat.name}</h4>
+              <button onclick="promptAddSubcategory('${cat.id}')" class="text-xs text-emerald-400 font-medium hover:underline">+ Agregar</button>
+            </div>
+            <div class="space-y-1">${subcatHtml || '<p class="text-[11px] text-zinc-500 italic">Sin subcategorías</p>'}</div>
+          </div>
+        `;
+      });
+    }
+
+    function updateSubcatBudget(catId, subName, val) {
+      state.budgetBase[catId][subName] = parseFloat(val) || 0;
+      saveLocalStorage();
+      renderPresupuestoBase();
+    }
+
+    function promptAddSubcategory(catId) {
+      const name = prompt("Nombre de la nueva subcategoría:");
+      if (name && name.trim()) {
+        state.budgetBase[catId][name.trim()] = 0;
+        saveLocalStorage();
+        renderPresupuestoBase();
+      }
+    }
+
+    function removeSubcategory(catId, subName) {
+      if (confirm(`¿Eliminar subcategoría "${subName}"?`)) {
+        delete state.budgetBase[catId][subName];
+        saveLocalStorage();
+        renderPresupuestoBase();
+      }
+    }
+
+    // MODAL Y REGISTRO DE TRANSACCIÓN
+    function openModalTransaction() {
+      initCategoryOptions();
+      document.getElementById('modal-transaction').classList.remove('hidden');
+      document.getElementById('tx-amount').focus();
+    }
+    function closeModalTransaction() {
+      document.getElementById('modal-transaction').classList.add('hidden');
+    }
+
+    function initCategoryOptions() {
+      const catSelect = document.getElementById('tx-category');
+      catSelect.innerHTML = '';
+      CATEGORIES.forEach(c => {
+        catSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      });
+      updateSubcategoryOptions();
+    }
+
+    function updateSubcategoryOptions() {
+      const catId = document.getElementById('tx-category').value;
+      const subSelect = document.getElementById('tx-subcategory');
+      subSelect.innerHTML = '';
+
+      const subcats = Object.keys(state.budgetBase[catId] || {});
+      if (subcats.length === 0) {
+        subSelect.innerHTML = `<option value="General">General</option>`;
+      } else {
+        subcats.forEach(s => {
+          subSelect.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+      }
+    }
+
+    function saveTransaction(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('tx-amount').value);
+      const category = document.getElementById('tx-category').value;
+      const subcategory = document.getElementById('tx-subcategory').value;
+      const date = document.getElementById('tx-date').value;
+      const note = document.getElementById('tx-note').value;
+
+      const newTx = {
+        id: Date.now(),
+        amount,
+        category,
+        subcategory,
+        date,
+        note
+      };
+
+      state.transactions.push(newTx);
+      saveLocalStorage();
+      closeModalTransaction();
+      document.getElementById('form-transaction').reset();
+      document.getElementById('tx-date').valueAsDate = new Date();
+      
+      renderDashboard();
+    }
+
+    function deleteTransaction(id) {
+      if (confirm("¿Eliminar este movimiento?")) {
+        state.transactions = state.transactions.filter(t => t.id !== id);
+        saveLocalStorage();
+        renderDashboard();
+        renderTransactionsList();
+      }
+    }
+
+    // LISTADO DE TRANSACCIONES
+    function renderTransactionsList() {
+      const container = document.getElementById('all-transactions-list');
+      const query = document.getElementById('tx-search').value.toLowerCase();
+      container.innerHTML = '';
+
+      const currentTxs = getMonthTransactions(state.year, state.currentMonth).filter(t => 
+        t.subcategory.toLowerCase().includes(query) || (t.note && t.note.toLowerCase().includes(query))
+      );
+
+      if (currentTxs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-zinc-500 italic text-center py-4">No se encontraron movimientos.</p>`;
+        return;
+      }
+
+      currentTxs.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+        container.appendChild(createTransactionRow(t, true));
+      });
+    }
+
+    function createTransactionRow(t, showDelete = false) {
+      const div = document.createElement('div');
+      div.className = "flex items-center justify-between p-2.5 bg-zinc-800/40 rounded-xl border border-zinc-800/80 text-xs";
+      
+      const isIncome = t.category === 'ingresos';
+      const amountColor = isIncome ? 'text-emerald-400' : 'text-zinc-200';
+
+      div.innerHTML = `
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg ${isIncome ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-700/40 text-zinc-400'} flex items-center justify-center font-bold">
+            <i class="ph ${isIncome ? 'ph-arrow-down-left' : 'ph-arrow-up-right'}"></i>
+          </div>
+          <div>
+            <p class="font-bold text-zinc-200">${t.subcategory}</p>
+            <p class="text-[10px] text-zinc-500">${t.date} ${t.note ? '• ' + t.note : ''}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold ${amountColor}">${isIncome ? '+' : '-'}${formatMoney(t.amount)}</span>
+          ${showDelete ? `<button onclick="deleteTransaction(${t.id})" class="text-zinc-600 hover:text-rose-400 p-1"><i class="ph ph-trash"></i></button>` : ''}
+        </div>
+      `;
+      return div;
+    }
+
+    // PATRIMONIO NETO
+    function renderPatrimonio() {
+      const activosContainer = document.getElementById('activos-list');
+      const pasivosContainer = document.getElementById('pasivos-list');
+      activosContainer.innerHTML = '';
+      pasivosContainer.innerHTML = '';
+
+      let totalActivos = 0;
+      let totalPasivos = 0;
+
+      state.patrimonio.activos.forEach(item => {
+        totalActivos += item.amount;
+        activosContainer.innerHTML += `
+          <div class="flex justify-between items-center p-2 bg-zinc-800/40 rounded-xl border border-zinc-800 text-xs">
+            <span class="text-zinc-300">${item.name}</span>
+            <div class="flex items-center gap-2">
+              <input type="number" value="${item.amount}" onchange="updatePatrimonioItem('activos', ${item.id}, this.value)" class="w-24 bg-zinc-800 border border-zinc-700 rounded px-1.5 py-0.5 text-right font-bold text-emerald-400 focus:outline-none">
+              <button onclick="removePatrimonioItem('activos', ${item.id})" class="text-zinc-600 hover:text-rose-400"><i class="ph ph-trash"></i></button>
+            </div>
+          </div>
+        `;
+      });
+
+      state.patrimonio.pasivos.forEach(item => {
+        totalPasivos += item.amount;
+        pasivosContainer.innerHTML += `
+          <div class="flex justify-between items-center p-2 bg-zinc-800/40 rounded-xl border border-zinc-800 text-xs">
+            <span class="text-zinc-300">${item.name}</span>
+            <div class="flex items-center gap-2">
+              <input type="number" value="${item.amount}" onchange="updatePatrimonioItem('pasivos', ${item.id}, this.value)" class="w-24 bg-zinc-800 border border-zinc-700 rounded px-1.5 py-0.5 text-right font-bold text-rose-400 focus:outline-none">
+              <button onclick="removePatrimonioItem('pasivos', ${item.id})" class="text-zinc-600 hover:text-rose-400"><i class="ph ph-trash"></i></button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('patrimonio-activos-total').innerText = formatMoney(totalActivos);
+      document.getElementById('patrimonio-pasivos-total').innerText = formatMoney(totalPasivos);
+      document.getElementById('patrimonio-neto-total').innerText = formatMoney(totalActivos - totalPasivos);
+    }
+
+    function addPatrimonioItem(type) {
+      const name = prompt(`Nombre del ${type === 'activo' ? 'Activo' : 'Pasivo'}:`);
+      if (name && name.trim()) {
+        const key = type === 'activo' ? 'activos' : 'pasivos';
+        state.patrimonio[key].push({ id: Date.now(), name: name.trim(), amount: 0 });
+        saveLocalStorage();
+        renderPatrimonio();
+      }
+    }
+
+    function updatePatrimonioItem(key, id, val) {
+      const item = state.patrimonio[key].find(i => i.id === id);
+      if (item) {
+        item.amount = parseFloat(val) || 0;
+        saveLocalStorage();
+        renderPatrimonio();
+      }
+    }
+
+    function removePatrimonioItem(key, id) {
+      state.patrimonio[key] = state.patrimonio[key].filter(i => i.id !== id);
+      saveLocalStorage();
+      renderPatrimonio();
+    }
+
+    // REPORTES Y DASHBOARD ANUAL
+    let anualChart = null;
+    function renderReportes() {
+      let totalIngresosAnual = 0;
+      let totalAhorroEInversionAnual = 0;
+
+      const ingresosPorMes = Array(12).fill(0);
+      const egresosPorMes = Array(12).fill(0);
+
+      state.transactions.forEach(t => {
+        const d = new Date(t.date);
+        if (d.getFullYear() === state.year) {
+          const m = d.getMonth();
+          if (t.category === 'ingresos') {
+            ingresosPorMes[m] += t.amount;
+            totalIngresosAnual += t.amount;
+          } else {
+            egresosPorMes[m] += t.amount;
+            if (t.category === 'ahorros' || t.category === 'inversiones') {
+              totalAhorroEInversionAnual += t.amount;
+            }
+          }
+        }
+      });
+
+      const tasaPct = totalIngresosAnual > 0 ? ((totalAhorroEInversionAnual / totalIngresosAnual) * 100).toFixed(1) : 0;
+      document.getElementById('tasa-ahorro-anual').innerText = `${tasaPct}%`;
+
+      // Actualizar Gráfico
+      if (anualChart) {
+        anualChart.data.datasets[0].data = ingresosPorMes;
+        anualChart.data.datasets[1].data = egresosPorMes;
+        anualChart.update();
+      }
+
+      // Tabla Resumen Anual
+      const tabla = document.getElementById('tabla-resumen-anual');
+      tabla.innerHTML = '';
+      CATEGORIES.forEach(c => {
+        let estTotal = getCategoryBudgetTotal(c.id) * 12;
+        let realTotal = state.transactions
+          .filter(t => new Date(t.date).getFullYear() === state.year && t.category === c.id)
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        tabla.innerHTML += `
+          <tr>
+            <td class="py-1.5 font-medium">${c.name}</td>
+            <td class="py-1.5 text-right font-mono text-zinc-400">${formatMoney(estTotal)}</td>
+            <td class="py-1.5 text-right font-mono font-bold">${formatMoney(realTotal)}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('chart-anual').getContext('2d');
+      anualChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+          datasets: [
+            { label: 'Ingresos', data: Array(12).fill(0), backgroundColor: '#10b981' },
+            { label: 'Egresos', data: Array(12).fill(0), backgroundColor: '#f43f5e' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#a1a1aa', font: { size: 10 } } } },
+          scales: {
+            x: { ticks: { color: '#71717a', font: { size: 9 } } },
+            y: { ticks: { color: '#71717a', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    // UTILIDADES & PERSISTENCIA LOCAL
+    function getMonthTransactions(year, month) {
+      return state.transactions.filter(t => {
+        const d = new Date(t.date + 'T00:00:00');
+        return d.getFullYear() === year && d.getMonth() === month;
+      });
+    }
+
+    function getCategoryBudgetTotal(catId) {
+      const subcats = state.budgetBase[catId] || {};
+      return Object.values(subcats).reduce((a, b) => a + b, 0);
+    }
+
+    function formatMoney(amount) {
+      return `${state.currency}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function saveLocalStorage() {
+      localStorage.setItem('pwa_budget_state', JSON.stringify(state));
+    }
+
+    function loadLocalStorage() {
+      const saved = localStorage.getItem('pwa_budget_state');
+      if (saved) {
+        try { state = JSON.parse(saved); } catch (e) { console.error(e); }
+      }
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+      const dlAnchorElem = document.createElement('a');
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", `presupuesto_backup_${state.year}.json`);
+      dlAnchorElem.click();
+    }
+
+    function importDataPrompt() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = e => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.readAsText(file, 'UTF-8');
+        reader.onload = readerEvent => {
+          try {
+            state = JSON.parse(readerEvent.target.result);
+            saveLocalStorage();
+            location.reload();
+          } catch(err) {
+            alert("Archivo JSON no válido.");
+          }
+        }
+      }
+      input.click();
+    }
+  </script>
+</body>
+</html>
